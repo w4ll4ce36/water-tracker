@@ -28,6 +28,7 @@ label{display:block;font-size:13px;color:#53636e;margin:12px 0 6px}
 .toggle{display:flex;align-items:center;justify-content:space-between;background:#f3f6f8;padding:12px;border-radius:12px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#17212b;color:#fff;padding:12px 16px;border-radius:999px;display:none;z-index:5}
 </style>
+<script>window.VAPID_PUBLIC_KEY="BB9Fb9QwmHLja0z2DPt0X96dYXoYHepVsYEMqXeF9mIQHaNkfsWI98FK_-fQggygzxjZlJOFah4g6E-h8JJjM_E";</script>
 </head>
 <body>
 <div class="app">
@@ -52,6 +53,11 @@ label{display:block;font-size:13px;color:#53636e;margin:12px 0 6px}
   <button id="testReminderNow" style="width:100%;margin-top:10px">🔔 今すぐリマインダーをテスト</button>
   <button id="testReminder1m" style="width:100%;margin-top:8px">⏱️ 1分後にリマインダーをテスト</button>
   <div id="reminderTestResult" class="note" style="margin-top:8px">テスト未実行</div>
+  <hr style="border:0;border-top:1px solid #e3e9ed;margin:16px 0">
+  <div style="font-weight:700">📱 自動リマインダー</div>
+  <div class="note" style="margin-top:6px">アプリを閉じていても、最後に飲んでから設定時間が経過したら通知します。</div>
+  <button id="enableAutoReminder" style="width:100%;margin-top:10px">🔔 自動リマインダーを有効にする</button>
+  <div id="autoReminderResult" class="note" style="margin-top:8px">未設定</div>
 </section>
 <section class="card">
     <div class="sub">今日の水分</div>
@@ -187,6 +193,19 @@ async function addDrink(d){
      });
      const text=await res.text();
      if(!res.ok) throw new Error(text);
+     try{
+       await fetch(SUPABASE_URL.replace(/\/$/,"")+"/functions/v1/touch-last-drink",{
+         method:"POST",
+         headers:{
+           "Content-Type":"application/json",
+           "apikey":SUPABASE_ANON_KEY,
+           "Authorization":"Bearer "+SUPABASE_ANON_KEY
+         },
+         body:JSON.stringify({
+           amount_ml:ml, water_ml:water, drink_name:d.name, device:navigator.userAgent
+         })
+       });
+     }catch(e){ console.warn("last-drink sync failed",e); }
    }catch(e){
      console.error("Supabase sync failed:",e);
      toast("⚠️ 画面には記録しましたがサーバー同期に失敗しました");
