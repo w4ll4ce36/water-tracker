@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
   btn.addEventListener("click",async function(){
     try{
-      if(!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+      if(!SUPABASE_URL || !SUPABASE_ANON_KEY){
         out.textContent="❌ Supabase URL / key が設定されていません";
         return;
       }
