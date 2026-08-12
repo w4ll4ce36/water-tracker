@@ -33,9 +33,9 @@ label{display:block;font-size:13px;color:#53636e;margin:12px 0 6px}
 <div class="app">
   <h1>💧 水分管理 <span style="font-size:12px;color:#6a7982">v5.1</span></h1>
 <section class="card" id="notifyCard">
-  <div style="font-weight:700">🔔 通知テスト v5.3.3</div>
+  <div style="font-weight:700">🔔 通知テスト v5.3.4</div>
   <div id="notifyResult" class="note" style="margin-top:8px">未実行</div><div class="note" style="margin-top:6px">押すと①〜⑦のどこまで進んだか表示します。</div>
-  <button class="primary" id="notifyDirectBtn" style="width:100%;margin-top:10px">通知を表示する</button>
+  <button class="primary" id="notifyDirectBtn" onclick="directNotificationTest()" style="width:100%;margin-top:10px">通知を表示する</button>
 </section>
 
 
@@ -104,8 +104,8 @@ label{display:block;font-size:13px;color:#53636e;margin:12px 0 6px}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = "https://bowemcwlbmowgergkjbt.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_3lsprjQeQBFhtwdW7loKbA_WgB_cPm9";
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
 const KEY="waterTracker_v2";
 const defaults=[
  {id:"water",name:"水",icon:"💧",rate:100,defaultMl:500},
@@ -226,12 +226,12 @@ document.getElementById("saveSettings").onclick=()=>{
 };
 render();
 
-async function directNotificationTest(){
+window.directNotificationTest = async function directNotificationTest(){
   const out=document.getElementById("notifyResult");
+  out.textContent="① ボタン押下を検知しました";
   const show=s=>{out.textContent=s;console.log("[notify-test]",s);};
 
   try{
-    show("① ボタン押下を検知しました");
 
     if(!("Notification" in window)){
       show("❌ Notification APIがありません");
@@ -273,7 +273,7 @@ async function directNotificationTest(){
     show("⑥ Service Worker OK");
 
     await reg.showNotification("💧 水分管理",{
-      body:"v5.3.3 通知テスト成功！",
+      body:"v5.3.4 通知テスト成功！",
       tag:"water-v533-test"
     });
 
@@ -284,7 +284,6 @@ async function directNotificationTest(){
   }
 }
 const notifyCard=document.getElementById("notifyCard");
-document.getElementById("notifyDirectBtn").onclick=directNotificationTest;
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("./sw.js",{scope:"./"}).then(()=>console.log("SW registered")).catch(e=>console.error("SW registration failed:",e));
