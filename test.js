@@ -5,23 +5,51 @@ document.addEventListener("DOMContentLoaded",function(){
 
   btn.addEventListener("click",async function(){
     const show=s=>{out.textContent=s;console.log("[notify-test]",s);};
+
     try{
       show("① 外部JavaScriptのクリック成功");
-      if(!("Notification" in window)){show("❌ Notification APIがありません");return;}
+
+      if(!("Notification" in window)){
+        show("❌ Notification APIがありません");
+        return;
+      }
+
       show("② Notification API OK / permission="+Notification.permission);
+
       let permission=Notification.permission;
-      if(permission!=="granted") permission=await Notification.requestPermission();
+      if(permission!=="granted"){
+        permission=await Notification.requestPermission();
+      }
+
       show("③ permission="+permission);
-      if(permission!=="granted"){show("❌ 通知が許可されていません");return;}
-      if(!("serviceWorker" in navigator)){show("❌ Service Worker APIがありません");return;}
-      show("④ Service Workerを確認中…");
-      const reg=await Promise.race([
-        navigator.serviceWorker.getRegistration("./"),
-        new Promise((_,reject)=>setTimeout(()=>reject(new Error("Service Worker取得が10秒でタイムアウト")),10000))
-      ]);
-      if(!reg){show("❌ Service Worker登録が見つかりません");return;}
-      show("⑤ Service Worker OK");
-      await reg.showNotification("💧 水分管理",{body:"v5.3.8 通知テスト成功！",tag:"water-v538-test"});
+
+      if(permission!=="granted"){
+        show("❌ 通知が許可されていません");
+        return;
+      }
+
+      if(!("serviceWorker" in navigator)){
+        show("❌ Service Worker APIがありません");
+        return;
+      }
+
+      show("④ Service Workerを登録中…");
+
+      const reg=await navigator.serviceWorker.register("./sw.js",{scope:"./"});
+      await navigator.serviceWorker.ready;
+
+      if(!reg){
+        show("❌ Service Worker登録に失敗しました");
+        return;
+      }
+
+      show("⑤ Service Worker登録OK");
+
+      await reg.showNotification("💧 水分管理",{
+        body:"v5.3.9 通知テスト成功！",
+        tag:"water-v539-test"
+      });
+
       show("⑥ ✅ showNotification() 成功");
     }catch(e){
       console.error("[notify-test]",e);
