@@ -33,9 +33,13 @@ label{display:block;font-size:13px;color:#53636e;margin:12px 0 6px}
 <div class="app">
   <h1>💧 水分管理 <span style="font-size:12px;color:#6a7982">v5.1</span></h1>
 <section class="card" id="notifyCard">
-  <div style="font-weight:700">🔔 通知テスト v5.3.4</div>
-  <div id="notifyResult" class="note" style="margin-top:8px">未実行</div><div class="note" style="margin-top:6px">押すと①〜⑦のどこまで進んだか表示します。</div>
-  <button class="primary" id="notifyDirectBtn" onclick="directNotificationTest()" style="width:100%;margin-top:10px">通知を表示する</button>
+  <div style="font-weight:700">🔔 クリック動作テスト v5.3.5</div>
+  <div id="notifyResult" class="note" style="margin-top:8px">未実行</div>
+  <button class="primary" id="notifyDirectBtn"
+    onclick="document.getElementById('notifyResult').textContent='✅ CLICK OK'"
+    style="width:100%;margin-top:10px">
+    ボタンを押す
+  </button>
 </section>
 
 
@@ -226,63 +230,6 @@ document.getElementById("saveSettings").onclick=()=>{
 };
 render();
 
-window.directNotificationTest = async function directNotificationTest(){
-  const out=document.getElementById("notifyResult");
-  out.textContent="① ボタン押下を検知しました";
-  const show=s=>{out.textContent=s;console.log("[notify-test]",s);};
-
-  try{
-
-    if(!("Notification" in window)){
-      show("❌ Notification APIがありません");
-      return;
-    }
-
-    show("② Notification API OK / permission="+Notification.permission);
-
-    let permission=Notification.permission;
-    if(permission!=="granted"){
-      show("③ 通知許可を確認中…");
-      permission=await Notification.requestPermission();
-    }
-
-    show("④ permission="+permission);
-
-    if(permission!=="granted"){
-      show("❌ 通知が許可されていません: "+permission);
-      return;
-    }
-
-    if(!("serviceWorker" in navigator)){
-      show("❌ Service Worker APIがありません");
-      return;
-    }
-
-    show("⑤ Service Worker登録を確認中…");
-
-    const reg=await Promise.race([
-      navigator.serviceWorker.getRegistration("./"),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Service Worker取得が10秒でタイムアウト")),10000))
-    ]);
-
-    if(!reg){
-      show("❌ Service Worker登録が見つかりません");
-      return;
-    }
-
-    show("⑥ Service Worker OK");
-
-    await reg.showNotification("💧 水分管理",{
-      body:"v5.3.4 通知テスト成功！",
-      tag:"water-v533-test"
-    });
-
-    show("⑦ ✅ showNotification() 成功");
-  }catch(e){
-    console.error("[notify-test]",e);
-    show("❌ "+e.name+" / "+e.message);
-  }
-}
 const notifyCard=document.getElementById("notifyCard");
 
 if("serviceWorker" in navigator){
