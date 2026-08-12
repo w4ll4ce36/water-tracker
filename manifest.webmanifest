@@ -1,0 +1,10 @@
+{
+  "id": "/water-tracker2/",
+  "name": "水分管理",
+  "short_name": "水分管理",
+  "start_url": "/water-tracker2/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "ja"
+}

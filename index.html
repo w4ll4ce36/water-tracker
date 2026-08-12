@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4aa3df"><link rel="manifest" href="manifest.webmanifest">
+<title>💧 水分管理</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#17212b;background:#f4f8fb}
+*{box-sizing:border-box} body{margin:0}
+.app{max-width:620px;margin:auto;padding:18px 16px 40px}
+.card{background:#fff;border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+h1{font-size:24px;margin:4px 0 16px}.sub{color:#667580;font-size:13px}
+.amount{text-align:center;font-size:36px;font-weight:800;margin:6px 0}.amount small{font-size:18px;color:#667580}
+.progress{height:16px;background:#e6eef4;border-radius:999px;overflow:hidden}.bar{height:100%;width:0;background:#4aa3df;transition:.25s}
+.stats{text-align:center;margin-top:9px;color:#53636e}.remaining{font-weight:700}
+input,button{font:inherit} input[type=number],input[type=text]{width:100%;padding:14px;border:1px solid #ccd8df;border-radius:12px;font-size:20px;background:#fff}
+.drink-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.drink{border:0;border-radius:16px;background:#eaf5fc;padding:14px 8px;min-height:76px;font-weight:700;cursor:pointer}.drink:active{transform:scale(.97)}
+.drink .icon{font-size:25px;display:block;margin-bottom:4px}.drink .default{display:block;font-size:12px;color:#60717d;font-weight:500}
+.add{background:#eef1f3}.danger{color:#a52d2d}
+.row{display:flex;gap:10px}.row>*{flex:1}
+button.primary,button.secondary{border:0;border-radius:12px;padding:13px;font-weight:700;cursor:pointer}.primary{background:#4aa3df;color:#fff}.secondary{background:#e9eef2}
+.list{margin:0;padding:0;list-style:none}.list li{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1f3}.list li:last-child{border-bottom:0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center}.modal.open{display:flex}.sheet{background:#fff;width:min(620px,100%);border-radius:24px 24px 0 0;padding:20px;max-height:90vh;overflow:auto}.sheet h2{margin-top:0}
+label{display:block;font-size:13px;color:#53636e;margin:12px 0 6px}
+.note{font-size:12px;color:#6a7982;line-height:1.6}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle{display:flex;align-items:center;justify-content:space-between;background:#f3f6f8;padding:12px;border-radius:12px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#17212b;color:#fff;padding:12px 16px;border-radius:999px;display:none;z-index:5}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>💧 水分管理 <span style="font-size:12px;color:#6a7982">v5.1</span></h1>
+<section class="card" id="notifyCard">
+  <div style="font-weight:700">🔔 通知テスト v5.3</div>
+  <div id="notifyResult" class="note" style="margin-top:8px">未実行</div>
+  <button class="primary" id="notifyDirectBtn" style="width:100%;margin-top:10px">通知を表示する</button>
+</section>
+
+
+  <section class="card">
+    <div class="sub">今日の水分</div>
+    <div class="amount"><span id="total">0</span> <small>/ <span id="goalLabel">2500</span> ml</small></div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="stats"><span id="percent">0%</span>　残り <span class="remaining" id="remaining">2500 ml</span></div>
+  </section>
+
+  <section class="card">
+    <div class="sub">飲んだ量（ボタンを押したときにこの値を使用）</div>
+    <input id="amountInput" type="number" min="1" step="1" value="500" inputmode="numeric" aria-label="飲んだ量">
+    <div class="drink-grid" id="drinkGrid"></div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <button class="secondary" id="settingsBtn">⚙️ 設定</button>
+      <button class="secondary" id="manageBtn">🥤 飲み物管理</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div style="font-weight:700;margin-bottom:6px">今日の記録</div>
+    <ul class="list" id="history"></ul>
+    <div id="empty" class="note">まだ記録がありません。</div>
+  </section>
+
+
+
+</div>
+
+<div class="modal" id="drinkModal">
+  <div class="sheet">
+    <h2>🥤 飲み物を追加・編集</h2>
+    <input type="hidden" id="editId">
+    <label>名前</label><input id="drinkName" type="text" placeholder="例：お茶">
+    <label>アイコン（絵文字1文字など）</label><input id="drinkIcon" type="text" value="🥤" maxlength="4">
+    <label>水分換算率（%）</label><input id="drinkRate" type="number" min="0" max="100" step="1" value="100">
+    <label>デフォルト量（ml）</label><input id="drinkDefault" type="number" min="1" step="1" value="500">
+    <p class="note">デフォルト量は補助値です。ホーム画面の「飲んだ量」に入力されている数値を常に優先します。</p>
+    <div class="row"><button class="secondary" id="cancelDrink">キャンセル</button><button class="primary" id="saveDrink">保存</button></div>
+    <div id="deleteDrinkWrap" style="margin-top:10px;display:none"><button class="secondary danger" id="deleteDrink">この飲み物を削除</button></div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="sheet">
+    <h2>⚙️ 設定</h2>
+    <label>1日の目標（ml）</label><input id="goalInput" type="number" min="1" step="50">
+
+    <div class="row"><button class="secondary" id="cancelSettings">キャンセル</button><button class="primary" id="saveSettings">保存</button></div>
+  </div>
+</div>
+
+<div class="modal" id="manageModal">
+  <div class="sheet">
+    <h2>🥤 飲み物管理</h2>
+    <div id="manageList"></div>
+    <button class="primary" style="width:100%;margin-top:12px" id="newDrink">＋ 飲み物を追加</button>
+    <button class="secondary" style="width:100%;margin-top:10px" id="closeManage">閉じる</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://bowemcwlbmowgergkjbt.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_3lsprjQeQBFhtwdW7loKbA_WgB_cPm9";
+const KEY="waterTracker_v2";
+const defaults=[
+ {id:"water",name:"水",icon:"💧",rate:100,defaultMl:500},
+ {id:"tea",name:"お茶",icon:"🍵",rate:100,defaultMl:500},
+ {id:"coffee",name:"コーヒー",icon:"☕",rate:100,defaultMl:300},
+ {id:"milk",name:"牛乳",icon:"🥛",rate:88,defaultMl:200},
+];
+let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
+};
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function todayKey(){return new Date().toISOString().slice(0,10);}
+function todayRecords(){return state.records.filter(r=>r.date===todayKey());}
+function total(){return Math.round(todayRecords().reduce((s,r)=>s+r.water,0));}
+function fmt(n){return Math.round(n).toLocaleString("ja-JP");}
+function render(){
+ document.getElementById("total").textContent=fmt(total());
+ document.getElementById("goalLabel").textContent=fmt(state.goal);
+ const pct=Math.min(100,total()/state.goal*100);
+ document.getElementById("percent").textContent=Math.round(pct)+"%";
+ document.getElementById("bar").style.width=pct+"%";
+ document.getElementById("remaining").textContent=fmt(Math.max(0,state.goal-total()))+" ml";
+ const grid=document.getElementById("drinkGrid"); grid.innerHTML="";
+ state.drinks.forEach(d=>{
+   const b=document.createElement("button"); b.className="drink";
+   b.innerHTML=`<span class="icon">${d.icon}</span>${esc(d.name)}<span class="default">通常 ${fmt(d.defaultMl)}ml</span>`;
+   b.onclick=()=>addDrink(d); grid.appendChild(b);
+ });
+ const add=document.createElement("button"); add.className="drink add"; add.innerHTML='<span class="icon">＋</span>追加';
+ add.onclick=()=>openDrink(); grid.appendChild(add);
+ const h=document.getElementById("history"); h.innerHTML="";
+ const rec=[...todayRecords()].reverse();
+ document.getElementById("empty").style.display=rec.length?"none":"block";
+ rec.forEach(r=>{
+   const li=document.createElement("li");
+   li.innerHTML=`<span>${r.icon} ${esc(r.name)} ${fmt(r.ml)}ml</span><b>+${fmt(r.water)}ml</b>`;
+   h.appendChild(li);
+ });
+ save();
+}
+async function addDrink(d){
+ let ml=parseFloat(document.getElementById("amountInput").value);
+ if(!Number.isFinite(ml)||ml<=0){toast("飲んだ量を入力してください");return;}
+ ml=Math.round(ml);
+ const water=Math.round(ml*d.rate/100);
+ state.records.push({date:todayKey(),ts:Date.now(),name:d.name,icon:d.icon,ml,water});
+ render();
+ toast(`${d.icon} ${ml}mlを記録（+${water}ml）`);
+
+ if(SUPABASE_URL && SUPABASE_ANON_KEY){
+   try{
+     const res=await fetch(SUPABASE_URL.replace(/\/$/,"")+"/functions/v1/record-drink",{
+       method:"POST",
+       headers:{
+         "Content-Type":"application/json",
+         "apikey":SUPABASE_ANON_KEY,
+         "Authorization":"Bearer "+SUPABASE_ANON_KEY
+       },
+       body:JSON.stringify({
+         amount_ml:ml,
+         water_ml:water,
+         drink_name:d.name,
+         drink_icon:d.icon,
+         device:navigator.userAgent
+       })
+     });
+     const text=await res.text();
+     if(!res.ok) throw new Error(text);
+   }catch(e){
+     console.error("Supabase sync failed:",e);
+     toast("⚠️ 画面には記録しましたがサーバー同期に失敗しました");
+   }
+ }
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function toast(s){const t=document.getElementById("toast");t.textContent=s;t.style.display="block";clearTimeout(window._toast);window._toast=setTimeout(()=>t.style.display="none",1800);}
+function openModal(id){document.getElementById(id).classList.add("open")}
+function closeModal(id){document.getElementById(id).classList.remove("open")}
+function openDrink(d=null){
+ document.getElementById("editId").value=d?.id||"";
+ document.getElementById("drinkName").value=d?.name||"";
+ document.getElementById("drinkIcon").value=d?.icon||"🥤";
+ document.getElementById("drinkRate").value=d?.rate??100;
+ document.getElementById("drinkDefault").value=d?.defaultMl??500;
+ document.getElementById("deleteDrinkWrap").style.display=d?"block":"none";
+ openModal("drinkModal");
+}
+function renderManage(){
+ const box=document.getElementById("manageList"); box.innerHTML="";
+ state.drinks.forEach(d=>{
+  const div=document.createElement("div");div.className="card";div.style.margin="0 0 10px";div.style.padding="12px";
+  div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><span>${d.icon} <b>${esc(d.name)}</b><br><span class="note">換算 ${d.rate}% / デフォルト ${d.defaultMl}ml</span></span><button class="secondary">編集</button></div>`;
+  div.querySelector("button").onclick=()=>openDrink(d); box.appendChild(div);
+ });
+}
+document.getElementById("saveDrink").onclick=()=>{
+ const name=document.getElementById("drinkName").value.trim(); if(!name){toast("名前を入力してください");return;}
+ const obj={id:document.getElementById("editId").value||("d_"+Date.now()),name,icon:document.getElementById("drinkIcon").value.trim()||"🥤",rate:Math.min(100,Math.max(0,Number(document.getElementById("drinkRate").value)||0)),defaultMl:Math.max(1,Number(document.getElementById("drinkDefault").value)||500)};
+ const i=state.drinks.findIndex(x=>x.id===obj.id); if(i>=0) state.drinks[i]=obj; else state.drinks.push(obj);
+ closeModal("drinkModal");renderManage();render();toast("飲み物を保存しました");
+};
+document.getElementById("deleteDrink").onclick=()=>{
+ const id=document.getElementById("editId").value;
+ if(!id)return;
+ state.drinks=state.drinks.filter(d=>d.id!==id); closeModal("drinkModal");renderManage();render();toast("削除しました");
+};
+document.getElementById("cancelDrink").onclick=()=>closeModal("drinkModal");
+document.getElementById("newDrink").onclick=()=>openDrink();
+document.getElementById("manageBtn").onclick=()=>{renderManage();openModal("manageModal")};
+document.getElementById("closeManage").onclick=()=>closeModal("manageModal");
+document.getElementById("settingsBtn").onclick=()=>{
+ document.getElementById("goalInput").value=state.goal;
+ openModal("settingsModal");
+};
+document.getElementById("cancelSettings").onclick=()=>closeModal("settingsModal");
+document.getElementById("saveSettings").onclick=()=>{
+ state.goal=Math.max(1,Number(document.getElementById("goalInput").value)||2500);
+ closeModal("settingsModal");render();toast("設定を保存しました");
+};
+render();
+
+async function directNotificationTest(){
+  const out=document.getElementById("notifyResult");
+  const show=s=>{out.textContent=s;console.log(s);};
+  try{
+    if(!("Notification" in window)){show("❌ Notification APIがありません");return;}
+    const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();
+    if(permission!=="granted"){show("❌ 通知許可がgrantedではありません: "+permission);return;}
+    if(!("serviceWorker" in navigator)){show("❌ Service Worker APIがありません");return;}
+    const reg=await navigator.serviceWorker.ready;
+    if(!reg||!reg.showNotification){show("❌ Service Worker registrationが取得できません");return;}
+    await reg.showNotification("💧 水分管理",{body:"v5.1 通知テスト成功！",tag:"water-v51-test"});
+    show("✅ showNotification() 成功");
+  }catch(e){
+    console.error(e);
+    show("❌ "+e.name+" / "+e.message);
+  }
+}
+const notifyCard=document.getElementById("notifyCard");
+document.getElementById("notifyDirectBtn").onclick=directNotificationTest;
+
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("/water-tracker2/sw.js",{scope:"/water-tracker2/"}).then(()=>console.log("SW registered")).catch(e=>console.error("SW registration failed:",e));
+}
+
+</script>
+</body>
+</html>
