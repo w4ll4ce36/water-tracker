@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded",function(){
       out.textContent="✅ 自動リマインダーを有効にしました";
     }catch(e){
       console.error("[push-subscribe]",e);
-      out.textContent="❌ "+e.name+" / "+e.message;
+      out.textContent="❌ "+e.name+" / "+e.message+"（Consoleも確認してください）";
     }
   });
 });
