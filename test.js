@@ -57,3 +57,32 @@ document.addEventListener("DOMContentLoaded",function(){
     }
   });
 });
+
+document.addEventListener("DOMContentLoaded",function(){
+  const msg=document.getElementById("reminderMessage");
+  const hours=document.getElementById("reminderHours");
+  const save=document.getElementById("saveReminderSettings");
+  const result=document.getElementById("reminderSaveResult");
+  if(!msg || !hours || !save) return;
+
+  const defaults={message:"💧 そろそろ水分補給しましょう！",hours:2};
+  try{
+    const saved=JSON.parse(localStorage.getItem("waterReminderSettings")||"null");
+    msg.value=(saved&&saved.message)||defaults.message;
+    hours.value=(saved&&saved.hours)||defaults.hours;
+  }catch(e){
+    msg.value=defaults.message;
+    hours.value=defaults.hours;
+  }
+
+  save.addEventListener("click",function(){
+    const data={
+      message:(msg.value||defaults.message).trim().slice(0,120),
+      hours:Math.max(0.5,Math.min(12,Number(hours.value)||2))
+    };
+    localStorage.setItem("waterReminderSettings",JSON.stringify(data));
+    msg.value=data.message;
+    hours.value=data.hours;
+    result.textContent="✅ リマインダー設定を保存しました";
+  });
+});
